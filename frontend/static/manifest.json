@@ -1,0 +1,17 @@
+{
+    "short_name": "Blackbook",
+    "name": "Blackbook",
+    "start_url": "/",
+    "icons": [
+      {
+        "src": "favicon.png",
+        "type": "image/png",
+        "sizes": "96x96"
+      }
+    ],
+    "background_color": "#222831",
+    "display": "standalone",
+    "scope": "/",
+    "theme_color": "#222831",
+    "shortcuts": []
+}

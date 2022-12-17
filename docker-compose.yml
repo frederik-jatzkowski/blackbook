@@ -1,0 +1,48 @@
+version: '3'
+
+volumes:
+  blackbook_data:
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "${FRONTEND_PORT}:3000"
+    depends_on:
+      - rest
+    environment:
+      - PUBLIC_REST_ADDRESS
+  rest:
+    build: ./rest
+    restart: always
+    ports:
+      - "${REST_PORT}:8080"
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_PORT
+      - POSTGRES_DB
+      - SMTP_IDENTITY
+      - SMTP_HOST
+      - SMTP_PORT
+      - SMTP_USERNAME
+      - SMTP_PASSWORD
+      - FRONTEND_ADDRESS
+      - FRONTEND_HOST
+      - PEPPER
+    depends_on:
+      - postgres
+  postgres:
+    image: postgres:15
+    restart: always
+    volumes:
+      - blackbook_data:/var/lib/postgresql/data:rw
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
