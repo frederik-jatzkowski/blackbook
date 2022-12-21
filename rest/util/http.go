@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-
-	"github.com/frederik-jatzkowski/blackbook/database"
 )
 
 func ParseBody[T interface{}](w http.ResponseWriter, r *http.Request, method string) (T, error) {
@@ -41,33 +39,20 @@ func ParseBody[T interface{}](w http.ResponseWriter, r *http.Request, method str
 	return result, err
 }
 
-func WriteResponse(w http.ResponseWriter, user *database.User, errs ...string) {
-	type ResponseUser struct {
-		ID        uint   `json:"id"`
-		Active    bool   `json:"active"`
-		FirstName string `json:"firstName"`
-		LastName  string `json:"lastName"`
-		Email     string `json:"email"`
-	}
-	type ResponseBody struct {
-		Ok     bool          `json:"ok"`
-		Errors []string      `json:"errors"`
-		User   *ResponseUser `json:"user"`
-	}
+type ResponseBody[T interface{}] struct {
+	Ok      bool     `json:"ok"`
+	Success *string  `json:"success"`
+	Errors  []string `json:"errors"`
+	Payload T        `json:"payload"`
+}
 
-	body := ResponseBody{
-		Ok:     len(errs) == 0,
-		Errors: errs,
-	}
+func WriteResponse[T interface{}](w http.ResponseWriter, payload T, success *string, errs ...string) {
 
-	if user != nil {
-		body.User = &ResponseUser{
-			ID:        user.ID,
-			Active:    user.Active,
-			FirstName: user.FirstName,
-			LastName:  user.LastName,
-			Email:     user.Email,
-		}
+	body := ResponseBody[T]{
+		Ok:      len(errs) == 0,
+		Success: success,
+		Payload: payload,
+		Errors:  errs,
 	}
 
 	data, _ := json.Marshal(body)

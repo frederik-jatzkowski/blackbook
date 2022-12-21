@@ -31,6 +31,67 @@ func NewService(db *gorm.DB, user *user.Service) (*Service, error) {
 	}, nil
 }
 
+func (service Service) finishResponse(w http.ResponseWriter, user *database.User, success *string, errors ...string) {
+	var (
+		groups      []database.Group
+		invitations []database.Invitation
+		feed        groupFeed
+		err         error
+	)
+
+	err = service.db.Order("id asc").Model(&user).Association("Groups").Find(&groups)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("error while fetching groups: %s", err)
+
+		return
+	}
+
+	err = service.db.Order("id asc").Model(&user).Preload("Sender").Preload("Group").
+		Association("ReceivedInvitations").Find(&invitations)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("error while fetching invitations: %s", err)
+
+		return
+	}
+
+	for _, group := range groups {
+		feed.Groups = append(feed.Groups, groupData{
+			ID:          group.ID,
+			Name:        group.Name,
+			Description: group.Description,
+		})
+	}
+
+	for _, invitation := range invitations {
+		feed.Invitations = append(feed.Invitations, invitationData{
+			ID:               invitation.ID,
+			Message:          invitation.Message,
+			SenderFirstName:  invitation.Sender.FirstName,
+			SenderEmail:      invitation.Sender.Email,
+			GroupName:        invitation.Group.Name,
+			GroupDescription: invitation.Group.Description,
+		})
+	}
+
+	util.WriteResponse(w, feed, success, errors...)
+}
+
+func (service Service) HandleGetAll(w http.ResponseWriter, r *http.Request) {
+	var (
+		user *database.User
+	)
+
+	// get user
+	user = service.user.GetActiveUserFromRequest(w, r)
+	if user == nil {
+		return
+	}
+
+	service.finishResponse(w, user, nil)
+}
+
 func (service Service) HandleCreate(w http.ResponseWriter, r *http.Request) {
 	var (
 		body   create
@@ -46,10 +107,8 @@ func (service Service) HandleCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get user
-	user = service.user.GetActiveUserFromRequest(r)
+	user = service.user.GetActiveUserFromRequest(w, r)
 	if user == nil {
-		util.WriteResponse(w, nil, "Bitte anmelden.")
-
 		return
 	}
 
@@ -61,12 +120,12 @@ func (service Service) HandleCreate(w http.ResponseWriter, r *http.Request) {
 
 	result = service.db.Create(&group)
 	if result.Error != nil {
-		util.WriteResponse(w, user, "Gruppe konnte nicht erstellt werden.")
+		service.finishResponse(w, user, nil, "Gruppe konnte nicht erstellt werden.")
 
 		return
 	}
 
-	util.WriteResponse(w, user)
+	service.finishResponse(w, user, util.PointerFor("Gruppe erstellt."))
 }
 
 func (service Service) HandleInvite(w http.ResponseWriter, r *http.Request) {
@@ -87,10 +146,8 @@ func (service Service) HandleInvite(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get inviting user
-	sender = service.user.GetActiveUserFromRequest(r)
+	sender = service.user.GetActiveUserFromRequest(w, r)
 	if sender == nil {
-		util.WriteResponse(w, sender, "Bitte anmelden.")
-
 		return
 	}
 
@@ -104,7 +161,7 @@ func (service Service) HandleInvite(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if group == nil {
-		util.WriteResponse(w, sender, "Kein Mitglied dieser Gruppe.")
+		service.finishResponse(w, sender, nil, "Kein Mitglied dieser Gruppe.")
 
 		return
 	}
@@ -112,7 +169,7 @@ func (service Service) HandleInvite(w http.ResponseWriter, r *http.Request) {
 	// get invited user
 	result = service.db.Where("email = ?", body.UserEmail).Preload("Groups").Take(&receiver)
 	if result.Error != nil {
-		util.WriteResponse(w, sender, "Eingeladener Nutzer existiert nicht.")
+		service.finishResponse(w, sender, nil, "Eingeladener Nutzer existiert nicht.")
 
 		return
 	}
@@ -120,7 +177,7 @@ func (service Service) HandleInvite(w http.ResponseWriter, r *http.Request) {
 	// check, if user is in group
 	for _, group2 := range receiver.Groups {
 		if group.ID == group2.ID {
-			util.WriteResponse(w, sender, "Nutzer ist bereits Teil der Gruppe.")
+			service.finishResponse(w, sender, nil, "Nutzer ist bereits Teil der Gruppe.")
 
 			return
 		}
@@ -133,16 +190,16 @@ func (service Service) HandleInvite(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// find invitation
-	result = service.db.Where(&invitation).Count(&count)
+	result = service.db.Model(&invitation).Where(&invitation).Count(&count)
 	if result.Error != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Printf("error while counting invitations: %s", err)
+		log.Printf("error while counting invitations: %s", result.Error)
 
 		return
 	}
 
 	if count != 0 {
-		util.WriteResponse(w, sender, "Nutzer wurde bereits eingeladen.")
+		service.finishResponse(w, sender, nil, "Nutzer wurde bereits eingeladen.")
 
 		return
 	}
@@ -152,12 +209,12 @@ func (service Service) HandleInvite(w http.ResponseWriter, r *http.Request) {
 
 	result = service.db.Create(&invitation)
 	if result.Error != nil {
-		util.WriteResponse(w, sender, "Einladung konnte nicht erstellt werden.")
+		service.finishResponse(w, sender, nil, "Einladung konnte nicht erstellt werden.")
 
 		return
 	}
 
-	util.WriteResponse(w, sender)
+	service.finishResponse(w, sender, util.PointerFor("Einladung abgeschickt."))
 }
 
 func (service Service) HandleAccept(w http.ResponseWriter, r *http.Request) {
@@ -175,17 +232,15 @@ func (service Service) HandleAccept(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get invited user
-	user = service.user.GetActiveUserFromRequest(r)
+	user = service.user.GetActiveUserFromRequest(w, r)
 	if user == nil {
-		util.WriteResponse(w, nil, "Bitte anmelden.")
-
 		return
 	}
 
 	// get invitation
 	result = service.db.Where("receiver_id = ?", user.ID).Preload("Group").Take(&invitation, body.InvitationId)
 	if result.Error != nil {
-		util.WriteResponse(w, user, "Einladung existiert nicht.")
+		service.finishResponse(w, user, nil, "Einladung existiert nicht.")
 
 		return
 	}
@@ -193,7 +248,7 @@ func (service Service) HandleAccept(w http.ResponseWriter, r *http.Request) {
 	// add user to group
 	err = service.db.Model(&user).Association("Groups").Append(&invitation.Group)
 	if err != nil {
-		util.WriteResponse(w, user, "Konnte nicht zur Gruppe hinzugefügt werden.")
+		service.finishResponse(w, user, nil, "Konnte nicht zur Gruppe hinzugefügt werden.")
 		log.Printf("could not add user to group: %s", err)
 
 		return
@@ -202,13 +257,13 @@ func (service Service) HandleAccept(w http.ResponseWriter, r *http.Request) {
 	// delete invitation
 	result = service.db.Delete(&invitation)
 	if result.Error != nil {
-		log.Printf("could not delete invitation with id %d: %s", invitation.ID, err)
 		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("could not delete invitation with id %d: %s", invitation.ID, err)
 
 		return
 	}
 
-	util.WriteResponse(w, user)
+	service.finishResponse(w, user, util.PointerFor("Gruppe beigetreten."))
 }
 
 func (service Service) HandleDecline(w http.ResponseWriter, r *http.Request) {
@@ -226,17 +281,15 @@ func (service Service) HandleDecline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get invited user
-	user = service.user.GetActiveUserFromRequest(r)
+	user = service.user.GetActiveUserFromRequest(w, r)
 	if user == nil {
-		util.WriteResponse(w, nil, "Bitte anmelden.")
-
 		return
 	}
 
 	// get invitation
 	result = service.db.Where("receiver_id = ?", user.ID).Preload("Group").Take(&invitation, body.InvitationId)
 	if result.Error != nil {
-		util.WriteResponse(w, user, "Einladung existiert nicht.")
+		service.finishResponse(w, user, nil, "Einladung existiert nicht.")
 
 		return
 	}
@@ -244,19 +297,71 @@ func (service Service) HandleDecline(w http.ResponseWriter, r *http.Request) {
 	// delete invitation
 	result = service.db.Delete(&invitation)
 	if result.Error != nil {
-		util.WriteResponse(w, user, "Einladung konnte nicht gelöscht werden.")
-		log.Printf("could not delete invitation with id %d: %s", invitation.ID, err)
+		service.finishResponse(w, user, nil, "Einladung konnte nicht gelöscht werden.")
+		log.Printf("could not delete invitation with id %d: %s", invitation.ID, result.Error)
 
 		return
 	}
 
-	util.WriteResponse(w, user)
+	service.finishResponse(w, user, util.PointerFor("Einladung abgelehnt."))
 }
 
 func (service Service) HandleUpdate(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+	var (
+		body   groupData
+		err    error
+		user   *database.User
+		result *gorm.DB
+	)
+
+	body, err = util.ParseBody[groupData](w, r, "POST")
+	if err != nil {
+		return
+	}
+
+	user = service.user.GetActiveUserFromRequest(w, r)
+	if user == nil {
+		return
+	}
+
+	result = service.db.Model(&database.Group{ID: body.ID}).Updates(&database.Group{
+		Name:        body.Name,
+		Description: body.Description,
+	})
+	if result.Error != nil {
+		service.finishResponse(w, user, nil, "Gruppe konnte nicht geändert werden.")
+		log.Printf("could not update group with id %d: %s", body.ID, result.Error)
+
+		return
+	}
+
+	service.finishResponse(w, user, util.PointerFor("Gruppe geändert."))
 }
 
 func (service Service) HandleLeave(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+	var (
+		body groupData
+		err  error
+		user *database.User
+	)
+
+	body, err = util.ParseBody[groupData](w, r, "POST")
+	if err != nil {
+		return
+	}
+
+	user = service.user.GetActiveUserFromRequest(w, r)
+	if user == nil {
+		return
+	}
+
+	err = service.db.Model(&user).Association("Groups").Delete(&database.Group{ID: body.ID})
+	if err != nil {
+		service.finishResponse(w, user, nil, "Gruppe konnte nicht verlassen werden.")
+		log.Printf("could not leave group with id %d: %s", body.ID, err)
+
+		return
+	}
+
+	service.finishResponse(w, user, util.PointerFor("Gruppe verlassen."))
 }

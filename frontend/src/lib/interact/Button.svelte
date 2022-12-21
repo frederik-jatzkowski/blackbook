@@ -12,7 +12,7 @@
 <style>
     button {
         cursor: pointer;
-        padding: .8rem;
+        padding: calc(var(--SPACING) * 0.6);
         margin: 0px;
         /* background-color: var(--COLOR-2); */
         outline: none;

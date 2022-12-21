@@ -16,3 +16,12 @@ type create struct {
 type activate struct {
 	ActivationCode string `json:"activationCode"`
 }
+
+type update struct {
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+}
+
+type delete struct {
+	Email string `json:"email"`
+}

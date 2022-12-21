@@ -48,6 +48,11 @@ func NewDatabase() (*gorm.DB, error) {
 		return db, fmt.Errorf("error while automigrating users: %s", err)
 	}
 
+	err = db.AutoMigrate(&Invitation{})
+	if err != nil {
+		return db, fmt.Errorf("error while automigrating invitations: %s", err)
+	}
+
 	return db, err
 
 }

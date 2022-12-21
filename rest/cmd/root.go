@@ -7,6 +7,7 @@ import (
 
 	"github.com/frederik-jatzkowski/blackbook/api"
 	"github.com/frederik-jatzkowski/blackbook/database"
+	"github.com/frederik-jatzkowski/blackbook/group"
 	"github.com/frederik-jatzkowski/blackbook/mail"
 	"github.com/frederik-jatzkowski/blackbook/user"
 	"github.com/spf13/cobra"
@@ -38,14 +39,20 @@ var rootCmd = &cobra.Command{
 			return fmt.Errorf("error while creating mail service: %s", err)
 		}
 
-		// create auth service
+		// create user service
 		userService, err = user.NewService(db, mailer)
 		if err != nil {
 			return fmt.Errorf("error while creating user service: %s", err)
 		}
 
+		// create group service
+		groupService, err := group.NewService(db, userService)
+		if err != nil {
+			return fmt.Errorf("error while creating group service: %s", err)
+		}
+
 		// create api
-		apiServer, err = api.NewServer(userService)
+		apiServer, err = api.NewServer(userService, groupService)
 		if err != nil {
 			return fmt.Errorf("error while creating server: %s", err)
 		}

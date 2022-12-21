@@ -10,8 +10,8 @@
     input {
         grid-column: span 2;
         font-size: 1.2rem;
-        padding: .6rem;
-        border: none;
+        padding: calc(var(--SPACING) * 0.6);
+        border: solid .1rem var(--COLOR-1);
         outline: none;
         background-color: var(--COLOR-2);
         color: var(--COLOR-4);

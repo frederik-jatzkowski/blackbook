@@ -18,6 +18,7 @@ func newSessionCookie(id uint, session string) *http.Cookie {
 		MaxAge:   2592000,
 		Secure:   true,
 		HttpOnly: true,
+		Path:     "/",
 		SameSite: http.SameSiteNoneMode,
 	}
 }

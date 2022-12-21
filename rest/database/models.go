@@ -19,7 +19,9 @@ type Invitation struct {
 	Message string `gorm:"not null"`
 	// associations
 	SenderID   uint  `gorm:"not null"`
+	Sender     User  `gorm:"foreignkey:SenderID"`
 	ReceiverID uint  `gorm:"not null"`
+	Receiver   User  `gorm:"foreignkey:ReceiverID"`
 	GroupID    uint  `gorm:"not null"`
 	Group      Group `gorm:"foreignkey:GroupID"`
 	// timestamps
