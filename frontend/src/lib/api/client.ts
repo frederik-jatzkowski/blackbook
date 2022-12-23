@@ -212,24 +212,24 @@ namespace client {
                 }
             ))
         }
-        export async function accept(data: types.AcceptDeclineData) {
+        export async function accept(data: types.InvitationData) {
             if(!browser) return;
             groupFeed.set(await fetchResponse(
                 "group/accept",
                 {
                     method: "POST",
-                    body: JSON.stringify(data),
+                    body: JSON.stringify({invitationId: data.id}),
                     credentials: "include"
                 }
             ))
         }
-        export async function decline(data: types.AcceptDeclineData) {
+        export async function decline(data: types.InvitationData) {
             if(!browser) return;
             groupFeed.set(await fetchResponse(
                 "group/decline",
                 {
                     method: "POST",
-                    body: JSON.stringify(data),
+                    body: JSON.stringify({invitationId: data.id}),
                     credentials: "include"
                 }
             ))

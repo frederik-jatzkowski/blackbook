@@ -1,7 +1,18 @@
 <script>
-    import Anchor from "$lib/interact/Anchor.svelte";
-    import GroupFeed from "$lib/feed/GroupFeed.svelte";
+  import Card, {
+    Content,
+    Actions,
+    ActionButtons,
+    ActionIcons,
+  } from "@smui/card";
+  import Button, { Label } from "@smui/button";
+  import IconButton, { Icon } from "@smui/icon-button";
 </script>
 
-<Anchor href="/verwaltung" span={1}>Verwaltung</Anchor>
-<GroupFeed/>
+<Card>
+  <Content>A Card</Content>
+  <Actions>
+    <Button>Hallo</Button>
+    <Button>Hallo</Button>
+  </Actions>
+</Card>

@@ -1,25 +1,47 @@
 <script lang="ts">
-    import Button3 from "$lib/interact/Button3.svelte";
-import client from "$lib/util/api/client";
+  import client from "$lib/api/client";
 
+  import Card, {
+    Actions as CardActions,
+    Content as CardContent,
+  } from "@smui/card";
+  import IconButton from "@smui/icon-button";
 
-    export let invitation: client.group.types.InvitationData;
+  export let invitation: client.group.types.InvitationData;
 </script>
 
-<invitation>
-    <p>{invitation.senderFirstName} ({invitation.senderEmail}) läd dich ein, der Gruppe {invitation.groupName} beizutreten:</p>
+<Card>
+  <CardContent>
+    <p>
+      <strong>Von: </strong>
+      {invitation.senderFirstName} ({invitation.senderEmail})
+    </p>
+    <p><strong>Gruppe: </strong>{invitation.groupName}</p>
+    <p><strong>Nachricht: </strong></p>
     <p>{invitation.message}</p>
+    <p><strong>Gruppenbeschreibung: </strong></p>
     <p>{invitation.groupDescription}</p>
-    <Button3 span={1} on:click={()=>client.group.accept({invitationId:invitation.id})}>Annehmen</Button3>
-    <Button3 span={1} on:click={()=>client.group.decline({invitationId:invitation.id})}>Ablehnen</Button3>
-</invitation>
+  </CardContent>
+  <CardActions>
+    <IconButton
+      class="material-icons"
+      title="accept"
+      on:click={() => client.group.accept(invitation)}
+    >
+      check
+    </IconButton>
+    <IconButton
+      class="material-icons"
+      title="decline"
+      on:click={() => client.group.decline(invitation)}
+    >
+      clear
+    </IconButton>
+  </CardActions>
+</Card>
 
 <style>
-    invitation {
-        display: grid;
-        grid-column: span 2;
-        background-color: var(--COLOR-2);
-        padding: var(--SPACING);
-        grid-gap: var(--SPACING);
-    }
+  p {
+    margin-block-end: 0.8rem;
+  }
 </style>

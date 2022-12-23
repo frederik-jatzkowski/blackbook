@@ -1,53 +1,70 @@
 <script lang="ts">
-    import Anchor from "$lib/interact/Anchor.svelte";
-    import ActivationForm from "$lib/user/ActivationForm.svelte";
-    import CreationForm from "$lib/user/CreationForm.svelte";
-    import LoginForm from "$lib/user/LoginForm.svelte";
-    import client, { session } from "$lib/util/api/client"
-    import Spinner from "$lib/util/Spinner.svelte";
-    import Errors from "$lib/util/Errors.svelte";
-
-    let messageHeight = 0;
-
+  import ActivationForm from "$lib/user/ActivationForm.svelte";
+  import CreationForm from "$lib/user/CreationForm.svelte";
+  import LoginForm from "$lib/user/LoginForm.svelte";
+  import client, { session } from "$lib/api/client";
+  import Spinner from "$lib/util/Spinner.svelte";
+  import TopAppBar, { Row, Section, Title } from "@smui/top-app-bar";
+  import Messages from "$lib/util/Messages.svelte";
+  import Snackbar, { Label, Actions } from "@smui/snackbar";
+  import IconButton from "@smui/icon-button";
+  import Paper from "@smui/paper";
 </script>
 
-<spacer style={`height: calc(${messageHeight}px - var(--SPACING) * 1.5);`}/>
+<Snackbar open>
+  <Label>response.success</Label>
+  <Actions>
+    <IconButton class="material-icons" title="Dismiss">close</IconButton>
+  </Actions>
+</Snackbar>
 
+<Messages store={session} />
 {#await client.user.sessionCheck()}
-    <Spinner>Blackbook wird gestartet</Spinner>
+  <Spinner>Blackbook wird gestartet</Spinner>
 {:then}
-    {#if $session.errors || $session.success}
-        <messages bind:clientHeight={messageHeight}>
-            <Errors response={$session}/>
-        </messages>
-    {/if}
-    {#if $session.payload}
-        {#if $session.payload.active}
-            <Anchor href="/" span={1}>Home</Anchor>
-            <slot/>
-        {:else}
-            <ActivationForm/>
-        {/if}
+  {#if $session.payload}
+    {#if $session.payload.active}
+      <TopAppBar variant="static" color="secondary">
+        <Row>
+          <Section>
+            <IconButton class="material-icons" href="/">assignment</IconButton>
+            <IconButton class="material-icons" href="/user">person</IconButton>
+            <IconButton class="material-icons" href="/group">group</IconButton>
+          </Section>
+          <Section align="end">
+            <IconButton class="material-icons" on:click={client.user.logout}>
+              logout
+            </IconButton>
+          </Section>
+        </Row>
+      </TopAppBar>
+      <main>
+        <slot />
+      </main>
     {:else}
-        <LoginForm/>
-        <CreationForm/>
+      <main>
+        <Paper color="secondary">
+          <ActivationForm />
+        </Paper>
+      </main>
     {/if}
+  {:else}
+    <main>
+      <Paper color="secondary">
+        <LoginForm />
+      </Paper>
+      <Paper color="secondary">
+        <CreationForm />
+      </Paper>
+    </main>
+  {/if}
 {/await}
-<!-- {JSON.stringify($session)} -->
 
 <style>
-    spacer {
-        grid-column: span 2;
-    }
-    messages {
-        position: fixed;
-        display: grid;
-        grid-column: span 2;
-        padding: var(--SPACING);
-        background-color: var(--COLOR-1);
-        top: 0;
-        right: 0;
-        left: 0;
-        height: max-content;
-    }
+  main {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: var(--SPACING);
+  }
 </style>

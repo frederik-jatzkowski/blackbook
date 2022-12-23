@@ -1,8 +1,8 @@
 <script lang="ts">
   import Form from "$lib/util/Form.svelte";
-  import client from "$lib/api/client";
   import Textfield from "@smui/textfield";
   import Icon from "@smui/textfield/icon";
+  import client, { session } from "$lib/api/client";
 
   const data: client.user.types.LoginData = {
     email: "",
@@ -10,11 +10,12 @@
   };
 </script>
 
-<Form name="Login" btn="Anmelden" on:submit={() => client.user.login(data)}>
-  <p>
-    Bitte melden Sie sich hier an, wenn Sie bereits ein Konto besitzen.
-    Andernfalls können Sie sich unten registrieren.
-  </p>
+<Form
+  name="Löschung bestätigen"
+  btn="Konto löschen"
+  on:submit={() => client.user.del(data)}
+>
+  <p>Bitte bestätigen Sie die Löschung ihres Kontos mit Ihren Zugangsdaten.</p>
   <Textfield bind:value={data.email} type="email" label="Emailaddresse">
     <Icon class="material-icons" slot="leadingIcon">mail</Icon>
   </Textfield>
