@@ -20,4 +20,4 @@ COPY --from=build /node/frontend/dist /node/frontend/dist
 COPY --from=build /node/frontend/src/package*.json /node/frontend/dist/
 
 ENTRYPOINT [ "node", "/node/frontend/dist/index.js" ]
-# trigger pipeline 5
+# trigger pipeline 6
