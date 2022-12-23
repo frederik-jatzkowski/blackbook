@@ -11,4 +11,3 @@ FROM alpine:3.17
 COPY --from=build /go/bin/rest /go/bin/rest
 
 ENTRYPOINT ["/go/bin/rest"]
-# trigger pipeline
