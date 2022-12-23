@@ -35,7 +35,7 @@ jobs:
             # create network
             docker network create blackbook
             # start new container
-            docker run -d --restart unless-stopped --network blackbook \
+            docker run -d --restart unless-stopped --network blackbook --hostname postgres \
               -v blackbook_data:/var/lib/postgresql/data:rw \
               -e POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
               -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
