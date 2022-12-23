@@ -1,0 +1,73 @@
+name: "Rest API CI/CD"
+
+on:
+  push:
+    paths:
+      - rest/**
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.ref_name == 'master'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build docker image
+        run: docker build -t ghcr.io/${{ github.repository }}-rest:latest ./rest
+
+      - name: Login to ghcr.io
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push
+        run: docker push ghcr.io/${{ github.repository }}-rest:latest
+        
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref_name == 'master'
+    environment:
+      blackbook.jatzkow.ski
+    steps:
+      - name: Deploy to target machine
+        env:
+          SSHPASS: ${{ secrets.SSHPASS }}
+        run: |
+          sshpass -e ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.DEPLOY_HOST }} -tt <<EOF
+            # disable bash history
+            set +o history
+            # tell bash to exit on error
+            set -e
+            # find running containers and stop them
+            OLD_CONTAINER_ID=\`docker ps -f 'ancestor=ghcr.io/${{ github.repository }}-rest' | grep ghcr.io/${{ github.repository }}-rest | awk '{ print \$1 }'\`
+            if [ -z "\${OLD_CONTAINER_ID}" ] ; then
+                echo "no containers to stop"
+            else
+                echo "stopping container: \${OLD_CONTAINER_ID}"
+                docker kill \${OLD_CONTAINER_ID}
+                # remove old container
+                echo "removing container: \${OLD_CONTAINER_ID}"
+                docker rm \${OLD_CONTAINER_ID}
+                # remove old images
+                docker image prune -f
+            fi
+            # install new image
+            docker pull ghcr.io/${{ github.repository }}-rest:latest
+            # start new container
+            docker run -d --restart unless-stopped --network blackbook \
+              -p ${{ secrets.REST_PORT }}:3000 \
+              -e POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
+              -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+              -e POSTGRES_PORT=${{ secrets.POSTGRES_PORT }} \
+              -e POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
+              -e SMTP_IDENTITY=${{ secrets.SMTP_IDENTITY }} \
+              -e SMTP_HOST=${{ secrets.SMTP_HOST }} \
+              -e SMTP_PORT=${{ secrets.SMTP_PORT }} \
+              -e SMTP_USERNAME=${{ secrets.SMTP_USERNAME }} \
+              -e SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }} \
+              -e FRONTEND_ADDRESS=${{ secrets.FRONTEND_ADDRESS }} \
+              -e APP_NAME=${{ secrets.APP_NAME }} \
+              ghcr.io/${{ github.repository }}-rest:latest
+            # exit succesfully
+            exit 0
+          EOF
