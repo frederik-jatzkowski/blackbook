@@ -1,0 +1,46 @@
+name: "Postgres Setup"
+
+on: workflow_dispatch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      blackbook.jatzkow.ski
+    steps:
+      - name: Deploy to target machine
+        env:
+          SSHPASS: ${{ secrets.SSHPASS }}
+        run: |
+          sshpass -e ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.DEPLOY_HOST }} -tt <<EOF
+            # disable bash history
+            set +o history
+            # tell bash to exit on error
+            set -e
+            # find running containers and stop them
+            OLD_CONTAINER_ID=\`docker ps -f 'label=blackbook-postgres' | grep postgres:15 | awk '{ print \$1 }'\`
+            if [ -z "\${OLD_CONTAINER_ID}" ] ; then
+                echo "no containers to stop"
+            else
+                echo "stopping container: \${OLD_CONTAINER_ID}"
+                docker kill \${OLD_CONTAINER_ID}
+                # remove old container
+                echo "removing container: \${OLD_CONTAINER_ID}"
+                docker rm \${OLD_CONTAINER_ID}
+                # remove old images
+                docker image prune -f
+            fi
+            # delete network
+            docker network prune -f
+            # create network
+            docker network create blackbook
+            # start new container
+            docker run -d --restart unless-stopped --network blackbook \
+              -v blackbook_data:/var/lib/postgresql/data:rw \
+              -e POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
+              -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+              -e POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
+              postgres:15
+            # exit succesfully
+            exit 0
+          EOF
