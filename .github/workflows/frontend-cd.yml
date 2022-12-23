@@ -26,6 +26,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.ref_name == 'master'
+    environment:
+      blackbook.jatzkow.ski
     steps:
       - name: Deploy to target machine
         env:
