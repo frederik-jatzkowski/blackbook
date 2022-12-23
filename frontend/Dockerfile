@@ -5,7 +5,6 @@ WORKDIR /node/frontend/src
 COPY . .
 
 RUN npm install
-# RUN npm ci --only=production
 
 RUN npm run build
 
