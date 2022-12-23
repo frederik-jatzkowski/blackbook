@@ -28,7 +28,7 @@ jobs:
     if: github.ref_name == 'master'
     steps:
       - name: Deploy to target machine
-        uses: |
+        run: |
           sshpass -e ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.DEPLOY_HOST }} -tt <<EOF
             # disable bash history
             set +o history
