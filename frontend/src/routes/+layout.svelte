@@ -11,6 +11,10 @@
   import Paper from "@smui/paper";
 </script>
 
+<svelte:head>
+  <title>Blackbook</title>
+</svelte:head>
+
 <Snackbar open>
   <Label>response.success</Label>
   <Actions>
