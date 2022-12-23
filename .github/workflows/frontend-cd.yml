@@ -26,6 +26,11 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.ref_name == 'master'
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
+      SSHPASS: ${{ secrets.SSHPASS }}
+      PUBLIC_REST_ADDRESS: ${{ secrets.PUBLIC_REST_ADDRESS }}
     steps:
       - name: Deploy to target machine
         run: |
