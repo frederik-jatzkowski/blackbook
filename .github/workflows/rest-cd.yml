@@ -67,6 +67,7 @@ jobs:
               -e SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }} \
               -e FRONTEND_ADDRESS=${{ secrets.FRONTEND_ADDRESS }} \
               -e APP_NAME=${{ secrets.APP_NAME }} \
+              -e PEPPER=${{ secrets.PEPPER }} \
               ghcr.io/${{ github.repository }}-rest:latest
             # exit succesfully
             exit 0
