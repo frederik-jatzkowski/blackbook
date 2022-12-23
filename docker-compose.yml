@@ -28,7 +28,7 @@ services:
       - SMTP_USERNAME
       - SMTP_PASSWORD
       - FRONTEND_ADDRESS
-      - FRONTEND_HOST
+      - APP_NAME
       - PEPPER
     depends_on:
       - postgres

@@ -18,7 +18,7 @@ type Service struct {
 
 func NewService() (*Service, error) {
 	var (
-		frontend = os.Getenv("FRONTEND_HOST")
+		frontend = os.Getenv("APP_NAME")
 		identity = os.Getenv("SMTP_IDENTITY")
 		username = os.Getenv("SMTP_USERNAME")
 		password = os.Getenv("SMTP_PASSWORD")
@@ -44,7 +44,7 @@ func NewService() (*Service, error) {
 	}
 
 	if frontend == "" {
-		return nil, fmt.Errorf("missing env variable FRONTEND_HOST")
+		return nil, fmt.Errorf("missing env variable APP_NAME")
 	}
 
 	return &Service{
