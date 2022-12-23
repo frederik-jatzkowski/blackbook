@@ -1,0 +1,36 @@
+name: 'Test, Build and Deploy Frontend'
+
+on:
+  push:
+    paths:
+      - folder1/**
+
+permissions:
+  contents: read
+  # Needed for the 'trilom/file-changes-action' action
+  pull-requests: read
+
+# This allows a subsequently queued workflow run to interrupt previous runs
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.ref_name == 'master'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Go to frontend directory
+        run: cd frontend
+
+      - name: Build docker image
+        run: docker build -t ghcr.io/${{ github.repository }}-frontend:latest .
+
+      - name: Login to ghcr.io
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push
+        run: docker push ghcr.io/${{ github.repository }}-frontend:latest
