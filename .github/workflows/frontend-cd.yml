@@ -26,13 +26,13 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.ref_name == 'master'
-    env:
-      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-      FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
-      SSHPASS: ${{ secrets.SSHPASS }}
-      PUBLIC_REST_ADDRESS: ${{ secrets.PUBLIC_REST_ADDRESS }}
     steps:
       - name: Deploy to target machine
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
+          SSHPASS: ${{ secrets.SSHPASS }}
+          PUBLIC_REST_ADDRESS: ${{ secrets.PUBLIC_REST_ADDRESS }}
         run: |
           sshpass -e ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${DEPLOY_HOST} -tt <<EOF
             # disable bash history
