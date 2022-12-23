@@ -23,11 +23,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Go to frontend directory
-        run: cd frontend
-
       - name: Build docker image
-        run: docker build -t ghcr.io/${{ github.repository }}-frontend:latest .
+        run: docker build -t ghcr.io/${{ github.repository }}-frontend:latest ./frontend
 
       - name: Login to ghcr.io
         run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
