@@ -34,7 +34,7 @@ jobs:
           SSHPASS: ${{ secrets.SSHPASS }}
           PUBLIC_REST_ADDRESS: ${{ secrets.PUBLIC_REST_ADDRESS }}
         run: |
-          sshpass -e ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${DEPLOY_HOST} -tt <<EOF
+          sshpass -e ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $DEPLOY_HOST -tt <<EOF
             # disable bash history
             set +o history
             # tell bash to exit on error
@@ -56,8 +56,8 @@ jobs:
             docker pull ghcr.io/${{ github.repository }}-frontend:latest
             # start new container
             docker run -d --restart unless-stopped --network host \
-              -e FRONTEND_PORT=${FRONTEND_PORT} \
-              -e PUBLIC_REST_ADDRESS=${PUBLIC_REST_ADDRESS} \
+              -e FRONTEND_PORT=$FRONTEND_PORT \
+              -e PUBLIC_REST_ADDRESS=$PUBLIC_REST_ADDRESS \
               ghcr.io/${{ github.repository }}-frontend:latest
             # exit succesfully
             exit 0
