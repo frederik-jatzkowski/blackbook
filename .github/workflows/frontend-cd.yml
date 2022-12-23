@@ -55,7 +55,7 @@ jobs:
             docker pull ghcr.io/${{ github.repository }}-frontend:latest
             # start new container
             docker run -d --restart unless-stopped --network host \
-              -e FRONTEND_PORT=${{ secrets.FRONTEND_PORT }} \
+              -p ${{ secrets.FRONTEND_PORT }}:3000 \
               -e PUBLIC_REST_ADDRESS=${{ secrets.PUBLIC_REST_ADDRESS }} \
               ghcr.io/${{ github.repository }}-frontend:latest
             # exit succesfully
