@@ -39,7 +39,7 @@ jobs:
             # tell bash to exit on error
             set -e
             # find running containers and stop them
-            OLD_CONTAINER_ID=\`docker ps -f 'ancestor=ghcr.io/${{ github.repository }}-frontend' | awk '{ print \$1 }'\`
+            OLD_CONTAINER_ID=\`docker ps -f 'ancestor=ghcr.io/${{ github.repository }}-frontend' | grep ${CI_REGISTRY}/${CI_PROJECT_PATH} | awk '{ print \$1 }'\`
             if [ -z "\${OLD_CONTAINER_ID}" ] ; then
                 echo "no containers to stop"
             else
