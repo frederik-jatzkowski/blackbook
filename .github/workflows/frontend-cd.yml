@@ -21,3 +21,39 @@ jobs:
 
       - name: Push
         run: docker push ghcr.io/${{ github.repository }}-frontend:latest
+        
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref_name == 'master'
+    steps:
+      - name: Deploy to target machine
+        uses: |
+          sshpass -e ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.DEPLOY_HOST }} -tt <<EOF
+            # disable bash history
+            set +o history
+            # tell bash to exit on error
+            set -e
+            # find running containers and stop them
+            OLD_CONTAINER_ID=\`docker ps -f 'ancestor=ghcr.io/${{ github.repository }}-frontend' | awk '{ print \$1 }'\`
+            if [ -z "\${OLD_CONTAINER_ID}" ] ; then
+                echo "no containers to stop"
+            else
+                echo "stopping container: \${OLD_CONTAINER_ID}"
+                docker kill \${OLD_CONTAINER_ID}
+                # remove old container
+                echo "removing container: \${OLD_CONTAINER_ID}"
+                docker rm \${OLD_CONTAINER_ID}
+                # remove old images
+                docker image prune -f
+            fi
+            # install new image
+            docker pull ghcr.io/${{ github.repository }}-frontend:latest
+            # start new container
+            docker run -d --restart unless-stopped --network host \
+              -e FRONTEND_PORT=${{ secrets.FRONTEND_PORT }} \
+              -e PUBLIC_REST_ADDRESS=${{ secrets.PUBLIC_REST_ADDRESS }} \
+              ghcr.io/${{ github.repository }}-frontend:latest
+            # exit succesfully
+            exit 0
+          EOF
