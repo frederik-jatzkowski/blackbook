@@ -31,7 +31,7 @@ jobs:
                 docker image prune -f
             fi
             # delete network
-            docker network prune
+            docker network prune -f
             # create network
             docker network create blackbook
             # start new container
